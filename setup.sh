@@ -1,6 +1,6 @@
 #!/bin/bash
 # This script file is used in build cloud hotspot openwrt, weiy <wei.a.yang@gmail.com>
-# $1: full_system  mini_system  
+# $1: full_system  mini_system ar71xx_generic 
 
 OPENWRT_DIR_NAME="openwrt."$1
 OPENWRT_DIR="${PWD}/${OPENWRT_DIR_NAME}"
@@ -8,8 +8,7 @@ CONFIG_FILE_TYPE="config."$1
 
 ###############################################################################
 if [ ! -d ${OPENWRT_DIR} ]; then
-	git clone git://git.openwrt.org/12.09/openwrt.git ${OPENWRT_DIR}/openwrt
-	git clone git://git.openwrt.org/12.09/packages.git ${OPENWRT_DIR}/packages
+	git clone git://git.openwrt.org/12.09/openwrt.git ${OPENWRT_DIR}
 fi
 
 #echo "make distclean"
@@ -21,8 +20,8 @@ ${OPENWRT_DIR}/scripts/feeds update
 ${OPENWRT_DIR}/scripts/feeds install -a -p cloud_hotspot
 
 # copy over the build config settings and the files directory
-cp ${OPENWRT_DIR}/../configs/.${CONFIG_FILE_TYPE} ${OPENWRT_DIR}/.config
-cp -r ${OPENWRT_DIR}/../files ${OPENWRT_DIR}
+cp ${OPENWRT_DIR}/../configs/${CONFIG_FILE_TYPE} ${OPENWRT_DIR}/.config
+#cp -r ${OPENWRT_DIR}/../files ${OPENWRT_DIR}
 
 # add patches to some components
 
