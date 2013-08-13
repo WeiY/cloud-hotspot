@@ -14,14 +14,18 @@ fi
 #echo "make distclean"
 #make distclean
 
-# add the specific cloud hotspot packages as a feed
-echo "src-link cloud_hotspot ${OPENWRT_DIR}/../cloud_hotspot_feed" > ${OPENWRT_DIR}/feeds.conf
-${OPENWRT_DIR}/scripts/feeds update
-${OPENWRT_DIR}/scripts/feeds install -a -p cloud_hotspot
-
 # copy over the build config settings and the files directory
 cp ${OPENWRT_DIR}/../configs/${CONFIG_FILE_TYPE} ${OPENWRT_DIR}/.config
 #cp -r ${OPENWRT_DIR}/../files ${OPENWRT_DIR}
+
+# add the specific cloud hotspot packages as a feed
+echo "src-svn packages svn://svn.openwrt.org/openwrt/branches/packages_12.09" > ${OPENWRT_DIR}/feeds.conf.default
+echo "src-svn luci http://svn.luci.subsignal.org/luci/branches/luci-0.11/contrib/package" >> ${OPENWRT_DIR}/feeds.conf.default
+echo "src-git routing git://github.com/openwrt-routing/packages.git;for-12.09.x" >> ${OPENWRT_DIR}/feeds.conf.default
+echo "src-link cloud_hotspot ${OPENWRT_DIR}/../cloud_hotspot_feed" >> ${OPENWRT_DIR}/feeds.conf.default
+${OPENWRT_DIR}/scripts/feeds update
+cd ${OPENWRT_DIR} && ../config_install_feeds.pl
+${OPENWRT_DIR}/scripts/feeds install -a -p cloud_hotspot
 
 # add patches to some components
 
