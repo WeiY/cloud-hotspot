@@ -1,0 +1,26 @@
+From 93bb54353392e075836d56f359e36ed92898a122 Mon Sep 17 00:00:00 2001
+From: WeiY <wei.a.yang@gmail.com>
+Date: Sun, 20 Oct 2013 17:04:01 +0800
+Subject: [PATCH] delete posix_fallocate define because of ulibc lack of
+ support
+
+---
+ src/deps/sqlite/sqlite3.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/deps/sqlite/sqlite3.c b/src/deps/sqlite/sqlite3.c
+index 544082d..4ea54c3 100644
+--- a/src/deps/sqlite/sqlite3.c
++++ b/src/deps/sqlite/sqlite3.c
+@@ -22747,7 +22747,7 @@ SQLITE_PRIVATE const char *sqlite3OpcodeName(int i){
+ */
+ #if !defined(HAVE_POSIX_FALLOCATE) \
+       && (_XOPEN_SOURCE >= 600 || _POSIX_C_SOURCE >= 200112L)
+-# define HAVE_POSIX_FALLOCATE 1
++# define HAVE_POSIX_FALLOCATE 0
+ #endif
+ 
+ /*
+-- 
+1.7.9.5
+
