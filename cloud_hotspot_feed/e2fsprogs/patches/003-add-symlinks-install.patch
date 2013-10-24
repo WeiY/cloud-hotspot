@@ -1,0 +1,13 @@
+--- a/Makefile.in	2012-05-15 10:04:19.000000000 +0800
++++ b/Makefile.in.new	2013-10-24 12:44:59.210658026 +0800
+@@ -16,8 +16,8 @@
+ @QUOTA_CMT@QUOTA_LIB_SUBDIR= lib/quota
+ 
+ LIB_SUBDIRS=lib/et lib/ss lib/e2p $(UUID_LIB_SUBDIR) lib/ext2fs $(BLKID_LIB_SUBDIR) $(QUOTA_LIB_SUBDIR) intl
+-PROG_SUBDIRS=e2fsck $(DEBUGFS_DIR) misc $(RESIZE_DIR) tests/progs po
+-SUBDIRS=util $(LIB_SUBDIRS) $(PROG_SUBDIRS) tests
++PROG_SUBDIRS=e2fsck $(DEBUGFS_DIR) misc $(RESIZE_DIR) tests/progs po util
++SUBDIRS=$(LIB_SUBDIRS) $(PROG_SUBDIRS) tests
+ 
+ SUBS= util/subst.conf lib/config.h lib/dirpaths.h \
+ 	lib/ext2fs/ext2_types.h lib/blkid/blkid_types.h lib/uuid/uuid_types.h

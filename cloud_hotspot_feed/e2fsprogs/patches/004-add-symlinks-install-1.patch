@@ -1,0 +1,20 @@
+--- a/util/Makefile.in	2012-05-15 10:04:19.000000000 +0800
++++ b/util/Makefile.in.new	2013-10-24 12:54:16.790675868 +0800
+@@ -43,6 +43,17 @@
+ 	sh gen-tarball all
+ 	sh gen-tarball subset
+ 
++install: symlinks
++	echo "  INSTALL $(root_sbindir)/symlinks"; \
++	$(INSTALL_PROGRAM) symlinks $(DESTDIR)$(root_sbindir)/symlinks;
++
++install-strip: install
++	echo "  STRIP $(root_sbindir)/symlinks"; \
++	$(STRIP) $(DESTDIR)$(root_sbindir)/symlinks; \
++
++uninstall:
++	$(RM) -f $(DESTDIR)$(root_sbindir)/symlinks; \
++
+ clean:
+ 	$(RM) -f $(PROGS) \#* *.s *.o *.a *~ core *.tar.gz gen-tarball \
+ 		copy-sparse

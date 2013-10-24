@@ -1,0 +1,410 @@
+--- a/package/linux/openwrt.bin/postinst	1970-01-01 07:00:00.000000000 +0700
++++ b/package-new/linux/openwrt.bin/postinst	2013-10-24 16:45:27.355119728 +0800
+@@ -0,0 +1,113 @@
++#!/bin/sh
++# 	postinst -- Post installation script for appweb
++#
++#	Copyright (c) Embedthis Software LLC, 2003-2010. All Rights Reserved.
++#
++
++BLD_PRODUCT=appweb
++BLD_NAME="Embedthis Appweb"
++BLD_BIN_PREFIX="/usr/local/bin"
++BLD_LIB_PREFIX="/usr/local/lib/appweb/4.4.1/lib"
++
++###############################################################################
++
++setup() {
++	local g u
++
++	#
++	#	Select default username
++	#
++	for u in nobody www-data 
++	do
++		grep "$u" /etc/passwd >/dev/null
++		if [ $? = 0 ] ; then
++			username=$u
++			break
++		fi
++	done
++
++	if [ "$username" = "" ] ; then
++		echo "Can't find a suitable username in /etc/passwd for $BLD_PRODUCT" 1>&2
++		exit 255
++	fi
++	
++	#
++	#	Select default group name
++	#
++	for g in nobody nogroup www-data 
++	do
++		grep "$g" /etc/group >/dev/null
++		if [ $? = 0 ] ; then
++			groupname=$g
++			break
++		fi
++	done
++	
++	if [ "$groupname" = "" ] ; then
++		echo "Can't find a suitable group in /etc/group for $BLD_PRODUCT" 1>&2
++		exit 255
++	fi
++}
++
++#
++#	Configure the product service. Usage: configureService start|stop|install
++#
++configureService() {
++	local action=$1
++
++	case $action in
++
++	start)
++		if which service >/dev/null 2>&1 ; then
++			service $BLD_PRODUCT $action
++		elif which invoke-rc.d >/dev/null 2>&1 ; then
++			invoke-rc.d appweb $action || true
++        elif [ -f /etc/init.d/$BLD_PRODUCT ] ; then
++            /etc/init.d/$BLD_PRODUCT start
++		fi
++		;;
++
++	install)
++        if which ldconfig >/dev/null 2>&1 ; then
++            ldconfig -n $BLD_LIB_PREFIX
++        fi
++		if which chkconfig >/dev/null 2>&1 ; then
++			chkconfig --add $BLD_PRODUCT
++			chkconfig --level 5 $BLD_PRODUCT on
++		elif which update-rc.d >/dev/null 2>&1 ; then
++			update-rc.d $BLD_PRODUCT defaults 90 10 >/dev/null || true
++        elif [ -f /etc/init.d/$BLD_PRODUCT ] ; then
++            (cd /etc/init.d ; /etc/init.d/$BLD_PRODUCT enable )
++		fi
++		;;
++	esac
++}
++
++install() {
++
++	configureService install
++	configureService start
++}
++
++###############################################################################
++#
++#	Main
++#
++
++cd /
++action=$1
++
++case $action in
++	configure)							# when new
++		oldVersion=$2
++		install
++		echo
++		echo "$BLD_NAME installation successful."
++		;;
++	abort-upgrade)						# when old
++		;;
++	abort-remove)
++		# 	sometimes conflictor's-postinst abort-remove in-favor package new-version
++		;;
++esac
++exit 0
+diff -Nur appweb-4.4.1-0/package/linux/openwrt.bin/postrm appweb-4.4.1-0/package-new/linux/openwrt.bin/postrm
+--- appweb-4.4.1-0/package/linux/openwrt.bin/postrm	1970-01-01 07:00:00.000000000 +0700
++++ appweb-4.4.1-0/package-new/linux/openwrt.bin/postrm	2013-10-24 16:43:40.527116308 +0800
+@@ -0,0 +1,111 @@
++#!/bin/sh
++#
++# 	postrm -- Post removal script for appweb
++#
++#	Copyright (c) Embedthis Software LLC, 2003-2013. All Rights Reserved.
++#
++
++BIT_PRODUCT=appweb
++BIT_NAME="Embedthis Appweb"
++BIT_ETC_PREFIX="/etc/appweb"
++BIT_CACHE_PREFIX="/var/spool/appweb/cache"
++
++remove() {
++	local cdir=`pwd`
++
++	if [ -x $BIT_ETC_PREFIX ] ; then
++		cd $BIT_ETC_PREFIX
++		removeIntermediateFiles access.log error.log '*.log.old' .dummy $BIT_PRODUCT.conf .*.log make.log
++		cleanDir
++		cd $cdir 
++		rmdir $BIT_ETC_PREFIX 2>/dev/null || true
++	fi
++	if [ -x $BIT_CACHE_PREFIX ] ; then
++		cd $BIT_CACHE_PREFIX
++		removeIntermediateFiles access.log error.log '*.log.old' .dummy $BIT_PRODUCT.conf .*.log make.log *.mod
++		cleanDir
++		cd $cdir 
++		rmdir $BIT_CACHE_PREFIX 2>/dev/null || true
++	fi
++}
++
++purge() {
++	local cdir=`pwd`
++	remove
++	if [ -x $BIT_ETC_PREFIX ] ; then
++		cd $BIT_ETC_PREFIX
++		removeIntermediateFiles access.log error.log '*.log.old' .dummy \
++			$BIT_PRODUCT.conf .appweb_pid.log '.httpClient_pid.log' make.log \
++			appweb.conf groups.db mime.types php.ini server.crt server.key \
++			server.key.pem users.db
++		cleanDir
++		cd $cdir 
++		rmdir $BIT_ETC_PREFIX 2>/dev/null || true
++	fi
++}
++
++#
++#	Cleanup empty directories. Usage: cleanDir directory
++#
++cleanDir() {
++	local count f
++
++	echo "Cleaning `pwd` ..."
++	if [ `pwd` = "/" ] ; then
++		echo "Configuration error: clean directory was '/'"
++		return
++	fi
++	find . -type d -print | sort -r | grep -v '^\.$' | while read d
++	do
++		count=`ls "$d" | wc -l | sed -e 's/ *//'`
++		[ "$count" = "0" ] && rmdir "$d"
++		if [ "$count" != "0" ] ; then
++			f=`echo "$d" | sed -e 's/\.\///'`
++			echo "Directory `pwd`/${f}, still has user data"
++		fi
++	done 
++}
++
++#
++#	Cleanup intermediate files
++#
++removeIntermediateFiles() {
++
++	find `pwd` -type d -print | while read d
++	do
++		before=`pwd`
++		cd "${d}"
++		eval rm -f $*
++		cd "${before}"
++	done
++}
++
++#
++#	Main
++#
++cd /
++action=$1
++case $action in
++	remove)					# when new
++		remove
++		;;
++	purge)					# when new
++		purge
++		;;
++	failed-upgrade)			# when new
++		oldVersion=$2
++		;;
++	abort-upgrade)			# when new
++		oldVersion=$2
++		;;
++	upgrade)				# when old
++		newVersion=$2
++		;;
++	disappear)				# when disappearing
++		# disappear overwriter overwriter-version
++		;;
++esac
++
++echo
++echo "$BIT_NAME $action successful"
++exit 0
+diff -Nur appweb-4.4.1-0/package/linux/openwrt.bin/preinst appweb-4.4.1-0/package-new/linux/openwrt.bin/preinst
+--- appweb-4.4.1-0/package/linux/openwrt.bin/preinst	1970-01-01 07:00:00.000000000 +0700
++++ appweb-4.4.1-0/package-new/linux/openwrt.bin/preinst	2013-10-24 16:43:40.527116308 +0800
+@@ -0,0 +1,95 @@
++#!/bin/sh
++#
++# 	preinst -- Pre install script for appweb
++#
++#	Copyright (c) Embedthis Software LLC, 2003-2013. All Rights Reserved.
++#
++
++BIT_PRODUCT=appweb
++BIT_NAME="Embedthis Appweb"
++
++ROOT_PREFIX="/"
++BASE_PREFIX="/usr/local"
++STATE_PREFIX="/var"
++APP_PREFIX="/usr/local/lib/appweb"
++VAPP_PREFIX="/usr/local/lib/appweb/4.4.1"
++
++BIN_PREFIX="/usr/local/bin"
++SBIN_PREFIX="/usr/local/sbin"
++ETC_PREFIX="/etc/appweb"
++INC_PREFIX="/usr/local/include"
++LIB_PREFIX="/usr/local/lib"
++MAN_PREFIX="/usr/local/share/man"
++WEB_PREFIX="/var/www/appweb-default"
++LOG_PREFIX="/var/log/appweb"
++SPL_PREFIX="/var/spool/appweb"
++CACHE_PREFIX="/var/spool/appweb/cache"
++
++ABIN="${VAPP_PREFIX}/bin"
++AINC="${VAPP_PREFIX}/in"
++
++#
++#	Modify service. Usage:configureService stop|remove
++#
++configureService() {
++	local action=$1
++
++	case $action in
++	stop)
++        #   Keep this for earlier versions without appman
++		if [ -f /etc/rc.d/init.d/$BIT_PRODUCT ] ; then
++			if which service >/dev/null 2>&1 ; then
++				service $BIT_PRODUCT $action
++			elif which invoke-rc.d >/dev/null 2>&1  ; then
++				invoke-rc.d $BIT_PRODUCT $action || true
++			fi
++        elif [ -f /etc/init.d/$BIT_PRODUCT ] ; then
++            /etc/init.d/$BIT_PRODUCT stop >/dev/null 2>&1
++		fi
++		if [ "`/bin/pidof /usr/local/bin/$BIT_PRODUCT`" != "" ] ; then
++            kill -9 `/bin/pidof /usr/local/bin/$BIT_PRODUCT`
++        fi
++		rm -rf /var/lock/subsys/$BIT_PRODUCT /var/lock/$BIT_PRODUCT "${LOG_PREFIX}" /var/run/$BIT_PRODUCT
++		;;
++
++	remove)
++        #   Keep this for earlier versions without appman
++		if which chkconfig >/dev/null 2>&1 ; then
++			chkconfig --del $BIT_PRODUCT
++			rm /etc/rc.d/init.d/$BIT_PRODUCT
++		elif which update-rc.d >/dev/null 2>&1 ; then
++			rm -f /etc/init.d/$BIT_PRODUCT
++			update-rc.d $BIT_PRODUCT remove >/dev/null || true
++        elif [ -f /etc/init.d/$BIT_PRODUCT ] ; then
++            ( cd /etc/init.d ; /etc/init.d/$BIT_PRODUCT disable )
++		fi
++		;;
++	esac
++}
++
++###############################################################################
++#
++#	Main
++#
++cd /
++action=$1
++
++case $action in
++	remove|install)					# when new
++		# or conflictor's prerm remove in-favor package new-version
++		oldVersion=$2
++		configureService stop
++		configureService remove
++		;;
++	upgrade)				# when old
++		newVersion=$2
++		configureService stop
++		;;
++	failed-upgrade)			# when new
++		oldVersion=$2
++		;;
++	deconfigure)			# when old
++		# 	deconfigure in-favor package-being-installed version removing 
++		#	conflicting-package version
++esac
++exit 0
+diff -Nur appweb-4.4.1-0/package/linux/openwrt.bin/prerm appweb-4.4.1-0/package-new/linux/openwrt.bin/prerm
+--- appweb-4.4.1-0/package/linux/openwrt.bin/prerm	1970-01-01 07:00:00.000000000 +0700
++++ appweb-4.4.1-0/package-new/linux/openwrt.bin/prerm	2013-10-24 16:45:18.747119452 +0800
+@@ -0,0 +1,76 @@
++#!/bin/sh
++# 	prerm -- Pre removal script for appweb
++#
++#	Copyright (c) Embedthis Software LLC, 2003-2010. All Rights Reserved.
++#
++
++BLD_PRODUCT=appweb
++BLD_NAME="Embedthis Appweb"
++BLD_BIN_PREFIX=/usr/local/bin
++BLD_CFG_PREFIX=/etc/appweb
++
++#
++#	Modify service. Usage:configureService stop|remove
++#
++configureService() {
++	local action=$1
++
++	case $action in
++	stop)
++		if [ -f /etc/rc.d/init.d/$BLD_PRODUCT ] ; then
++			if which service >/dev/null 2>&1 ; then
++				service $BLD_PRODUCT $action
++			elif which invoke-rc.d >/dev/null 2>&1 ; then
++				invoke-rc.d $BLD_PRODUCT $action || true
++            fi
++        elif [ -f /etc/init.d/$BLD_PRODUCT ] ; then
++            /etc/init.d/$BLD_PRODUCT stop
++		fi
++		pid=`/bin/pidof /usr/lib/appweb/bin/$BLD_PRODUCT; true`
++		[ "$pid" != "" ] && kill -9 $pid
++		rm -f /var/lock/subsys/$BLD_PRODUCT /var/lock/$BLD_PRODUCT
++		rm -fr /var/log/$BLD_PRODUCT
++		rm -rf /var/run/$BLD_PRODUCT
++		;;
++
++	remove)
++		if which chkconfig >/dev/null 2>&1 ; then
++			chkconfig --del $BLD_PRODUCT
++			rm /etc/rc.d/init.d/$BLD_PRODUCT
++
++		elif which update-rc.d >/dev/null 2>&1 ; then
++			rm -f /etc/init.d/$BLD_PRODUCT
++			update-rc.d $BLD_PRODUCT remove >/dev/null || true
++
++        elif [ -f /etc/init.d/$BLD_PRODUCT ] ; then
++            ( cd /etc/init.d ; /etc/init.d/$BLD_PRODUCT disable )
++		fi
++		;;
++	esac
++}
++
++###############################################################################
++#
++#	Main
++#
++cd /
++action=$1
++case $action in
++	remove)					# when new
++		# or conflictor's prerm remove in-favor package new-version
++		oldVersion=$2
++		configureService stop
++		configureService remove
++		;;
++	upgrade)				# when old
++		newVersion=$2
++		configureService stop
++		;;
++	failed-upgrade)			# when new
++		oldVersion=$2
++		;;
++	deconfigure)			# when old
++		# 	deconfigure in-favor package-being-installed version removing 
++		#	conflicting-package version
++esac
++exit 0

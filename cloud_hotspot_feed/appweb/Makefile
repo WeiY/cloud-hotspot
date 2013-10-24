@@ -60,7 +60,7 @@ define Package/appweb/description
 endef
 
 CONFIGURE_ARGS = \
-	PROFILE=openwrt \
+	PROFILE=release \
 	BIT_EJS_DB=1 \
 	BIT_EJS_MAIL=1 \
 	BIT_EJS_MAPPER=1 \
@@ -86,16 +86,19 @@ CONFIGURE_ARGS = \
 define Build/Compile
 	cd $(PKG_BUILD_DIR); $(MAKE) ARCH=mips \
 		$(TARGET_CONFIGURE_OPTS) \
-		$(CONFIGURE_ARGS)
+		$(CONFIGURE_ARGS) \
+		-f projects/appweb-linux-openwrt.mk
 endef
 
 define Package/appweb/install
-	cd $(PKG_BUILD_DIR) ; $(MAKE) \
+	cd $(PKG_BUILD_DIR) ; $(MAKE) PROFILE=release \
 		$(TARGET_CONFIGURE_OPTS) \
 		ARCH=mips BIT_ROOT_PREFIX=$(1) \
 		$(CONFIGURE_ARGS) \
-		installBinary
-	rm -rf $(1)/var
+		-f projects/appweb-linux-openwrt.mk \
+		installBinary;
+	cp $(PKG_BUILD_DIR)/package/linux/openwrt.bin/* $(PKG_BUILD_DIR)/ipkg-ar71xx/appweb/CONTROL/
+	symlinks -c $(PKG_BUILD_DIR)/ipkg-ar71xx/appweb/usr/local/bin/
 endef
 
 $(eval $(call BuildPackage,appweb))

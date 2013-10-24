@@ -1,19 +1,6 @@
-From bdb3d60c3a25038729b7ca631824871b2a33fd25 Mon Sep 17 00:00:00 2001
-From: WeiY <wei.a.yang@gmail.com>
-Date: Sun, 20 Oct 2013 16:41:51 +0800
-Subject: [PATCH] add openwrt makefile
-
----
- projects/appweb-linux-openwrt.mk | 2598 ++++++++++++++++++++++++++++++++++++++
- 1 file changed, 2598 insertions(+)
- create mode 100644 projects/appweb-linux-openwrt.mk
-
-diff --git a/projects/appweb-linux-openwrt.mk b/projects/appweb-linux-openwrt.mk
-new file mode 100644
-index 0000000..7884f99
---- /dev/null
-+++ b/projects/appweb-linux-openwrt.mk
-@@ -0,0 +1,2598 @@
+--- a/projects/appweb-linux-openwrt.mk	1970-01-01 07:00:00.000000000 +0700
++++ b/projects-new/appweb-linux-openwrt.mk	2013-10-24 19:30:00.313201104 +0800
+@@ -0,0 +1,2602 @@
 +#
 +#   appweb-linux-default.mk -- Makefile to build Embedthis Appweb for linux
 +#
@@ -21,7 +8,7 @@ index 0000000..7884f99
 +PRODUCT            := appweb
 +VERSION            := 4.4.1
 +BUILD_NUMBER       := 0
-+PROFILE            := default
++PROFILE            := release
 +ARCH               := $(shell uname -m | sed 's/i.86/x86/;s/x86_64/x64/;s/arm.*/arm/;s/mips.*/mips/')
 +CC_ARCH            := $(shell echo $(ARCH) | sed 's/x86/i686/;s/x64/x86_64/')
 +OS                 := linux
@@ -99,7 +86,7 @@ index 0000000..7884f99
 +LIBPATHS           += -L$(CONFIG)/bin
 +LIBS               += -lrt -ldl -lpthread -lm
 +
-+DEBUG              := debug
++DEBUG              := release
 +CFLAGS-debug       := -g
 +DFLAGS-debug       := -DBIT_DEBUG
 +LDFLAGS-debug      := -g
@@ -113,7 +100,7 @@ index 0000000..7884f99
 +BIT_ROOT_PREFIX    := 
 +BIT_BASE_PREFIX    := $(BIT_ROOT_PREFIX)/usr/local
 +BIT_DATA_PREFIX    := $(BIT_ROOT_PREFIX)/
-+BIT_STATE_PREFIX   := $(BIT_ROOT_PREFIX)/var
++BIT_STATE_PREFIX   := $(BIT_ROOT_PREFIX)/www/$(PRODUCT)-default/var
 +BIT_APP_PREFIX     := $(BIT_BASE_PREFIX)/lib/$(PRODUCT)
 +BIT_VAPP_PREFIX    := $(BIT_APP_PREFIX)/$(VERSION)
 +BIT_BIN_PREFIX     := $(BIT_ROOT_PREFIX)/usr/local/bin
@@ -122,10 +109,10 @@ index 0000000..7884f99
 +BIT_MAN_PREFIX     := $(BIT_ROOT_PREFIX)/usr/local/share/man
 +BIT_SBIN_PREFIX    := $(BIT_ROOT_PREFIX)/usr/local/sbin
 +BIT_ETC_PREFIX     := $(BIT_ROOT_PREFIX)/etc/$(PRODUCT)
-+BIT_WEB_PREFIX     := $(BIT_ROOT_PREFIX)/var/www/$(PRODUCT)-default
-+BIT_LOG_PREFIX     := $(BIT_ROOT_PREFIX)/var/log/$(PRODUCT)
-+BIT_SPOOL_PREFIX   := $(BIT_ROOT_PREFIX)/var/spool/$(PRODUCT)
-+BIT_CACHE_PREFIX   := $(BIT_ROOT_PREFIX)/var/spool/$(PRODUCT)/cache
++BIT_WEB_PREFIX     := $(BIT_ROOT_PREFIX)/www/$(PRODUCT)-default
++BIT_LOG_PREFIX     := $(BIT_ROOT_PREFIX)/www/$(PRODUCT)-default/var/log/$(PRODUCT)
++BIT_SPOOL_PREFIX   := $(BIT_ROOT_PREFIX)/www/$(PRODUCT)-default/var/spool/$(PRODUCT)
++BIT_CACHE_PREFIX   := $(BIT_ROOT_PREFIX)/www/$(PRODUCT)-default/var/spool/$(PRODUCT)/cache
 +BIT_SRC_PREFIX     := $(BIT_ROOT_PREFIX)$(PRODUCT)-$(VERSION)
 +
 +
@@ -2142,17 +2129,21 @@ index 0000000..7884f99
 +	[ `id -u` = 0 ] && chown $(WEB_USER):$(WEB_GROUP) "$(BIT_CACHE_PREFIX)"; true
 +	mkdir -p "$(BIT_VAPP_PREFIX)/bin"
 +	cp $(CONFIG)/bin/appweb $(BIT_VAPP_PREFIX)/bin/appweb
++	$(STRIP) $(BIT_VAPP_PREFIX)/bin/appweb;
 +	mkdir -p "$(BIT_BIN_PREFIX)"
 +	rm -f "$(BIT_BIN_PREFIX)/appweb"
 +	ln -s "$(BIT_VAPP_PREFIX)/bin/appweb" "$(BIT_BIN_PREFIX)/appweb"
 +	cp $(CONFIG)/bin/appman $(BIT_VAPP_PREFIX)/bin/appman
++	$(STRIP) $(BIT_VAPP_PREFIX)/bin/appman;
 +	rm -f "$(BIT_BIN_PREFIX)/appman"
 +	ln -s "$(BIT_VAPP_PREFIX)/bin/appman" "$(BIT_BIN_PREFIX)/appman"
 +	cp $(CONFIG)/bin/http $(BIT_VAPP_PREFIX)/bin/http
++	$(STRIP) $(BIT_VAPP_PREFIX)/bin/http;
 +	rm -f "$(BIT_BIN_PREFIX)/http"
 +	ln -s "$(BIT_VAPP_PREFIX)/bin/http" "$(BIT_BIN_PREFIX)/http"
 +ifeq ($(BIT_PACK_ESP),1)
 +	cp $(CONFIG)/bin/esp $(BIT_VAPP_PREFIX)/bin/esp
++	$(STRIP) $(BIT_VAPP_PREFIX)/bin/esp;
 +	rm -f "$(BIT_BIN_PREFIX)/esp"
 +	ln -s "$(BIT_VAPP_PREFIX)/bin/esp" "$(BIT_BIN_PREFIX)/esp"
 +endif
@@ -2549,7 +2540,7 @@ index 0000000..7884f99
 +	cp package/linux/appweb.openwrt $(BIT_ROOT_PREFIX)/etc/init.d/appweb
 +	[ `id -u` = 0 ] && chown root:root "$(BIT_ROOT_PREFIX)/etc/init.d/appweb"; true
 +	chmod 755 "$(BIT_ROOT_PREFIX)/etc/init.d/appweb"
-+	echo 'set LOG_DIR "$(BIT_LOG_PREFIX)"\nset CACHE_DIR "$(BIT_CACHE_PREFIX)"\nDocuments "$(BIT_WEB_PREFIX)\nListen 80\nListenSecure 443\n' >$(BIT_ETC_PREFIX)/install.conf
++	echo 'set LOG_DIR "/www/appweb-default/var/log/appweb"\nset CACHE_DIR "/www/appweb-default/var/spool/appweb/cache"\nDocuments "/www/appweb-default\nListen 8080\nListenSecure 443\n' >$(BIT_ETC_PREFIX)/install.conf
 +
 +#
 +#   start
@@ -2612,6 +2603,3 @@ index 0000000..7884f99
 +run: $(DEPS_98)
 +	cd src/server; sudo ../../$(CONFIG)/bin/appweb -v ; cd ../..
 +
--- 
-1.7.9.5
-

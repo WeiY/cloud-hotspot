@@ -1,0 +1,27 @@
+From c20ff9ea3833e22118728370c9000b452ba3f30c Mon Sep 17 00:00:00 2001
+From: WeiY <wei.a.yang@gmail.com>
+Date: Wed, 23 Oct 2013 01:05:39 +0800
+Subject: [PATCH] modify appweb.openwrt init script
+
+---
+ package/linux/appweb.openwrt |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/package/linux/appweb.openwrt b/package/linux/appweb.openwrt
+index 3388ce3..7e80385 100644
+--- a/package/linux/appweb.openwrt
++++ b/package/linux/appweb.openwrt
+@@ -5,8 +5,8 @@
+ #
+ START=50
+ STOP=50
+-APPWEB_CMD=${prefixes.bin}/${settings.product}
+-APPWEB_DIR=${prefixes.cfg}
++APPWEB_CMD=/usr/local/lib/appweb/4.4.1/bin/appweb
++APPWEB_DIR=/etc/appweb
+ 
+ start() {
+     start-stop-daemon -S -b -x "${APPWEB_CMD}" -- --home "$APPWEB_DIR"
+-- 
+1.7.9.5
+
