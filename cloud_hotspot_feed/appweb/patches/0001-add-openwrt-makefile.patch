@@ -18,17 +18,17 @@
 +LBIN               := $(CONFIG)/bin
 +
 +BIT_PACK_CGI       := 1
-+BIT_PACK_EJSCRIPT  := 0
++BIT_PACK_EJSCRIPT  := 1
 +BIT_PACK_ESP       := 1
-+BIT_PACK_EST       := 0
++BIT_PACK_EST       := 1
 +BIT_PACK_MATRIXSSL := 0
 +BIT_PACK_MDB       := 1
 +BIT_PACK_NANOSSL   := 0
 +BIT_PACK_OPENSSL   := 0
 +BIT_PACK_PCRE      := 1
 +BIT_PACK_PHP       := 0
-+BIT_PACK_SDB       := 0
-+BIT_PACK_SQLITE    := 0
++BIT_PACK_SDB       := 1
++BIT_PACK_SQLITE    := 1
 +BIT_PACK_SSL       := 0
 +
 +ifeq ($(BIT_PACK_EST),1)

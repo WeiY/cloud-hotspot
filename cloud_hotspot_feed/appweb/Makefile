@@ -99,6 +99,7 @@ define Package/appweb/install
 		installBinary;
 	cp $(PKG_BUILD_DIR)/package/linux/openwrt.bin/* $(PKG_BUILD_DIR)/ipkg-ar71xx/appweb/CONTROL/
 	symlinks -c $(PKG_BUILD_DIR)/ipkg-ar71xx/appweb/usr/local/bin/
+	cd $(PKG_BUILD_DIR)/samples; esp generate app blog angular-mvc; cd blog; $(TARGET_CONFIGURE_OPTS) esp compile;
 endef
 
 $(eval $(call BuildPackage,appweb))
